@@ -1,0 +1,27 @@
+{
+    "esversion": 6,
+    "globals":{
+        "document": true,
+        "console": true,
+        "window": true,
+        "setTimeout": true,
+        "clearTimeout": true,
+        "alert": true,
+        "Construct": true,
+        "Event": true,
+        "require": true,
+        "fetch": true,
+        "setInterval": true,
+        "clearInterval": true,
+        "process": true
+    },
+    "asi": true,
+    "curly": true,
+    "esversion": 6,
+    "undef": true,
+    "indent": 4,
+    "evil": true,
+    "unused": true,
+    "loopfunc": true,
+    "sub": true
+}
