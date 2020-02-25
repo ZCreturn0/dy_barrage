@@ -1,45 +1,43 @@
 const WebSocket = require('ws');
-const ROOM_ID = '2550505';
-const USERNAME = 0;
-const UID = 0;
 
 // 弹幕服务器
 const BARRAGE_SERVER = 'wss://danmuproxy.douyu.com:8505/';
 const ORIGIN = 'https://www.douyu.com';
 
-const ws = new WebSocket(BARRAGE_SERVER, {
-    origin: ORIGIN
-});
+const USERNAME = 0;
+const UID = 0;
 
-let msgEditor = {
+class Barrage {
+    constructor(roomId) {
+        this.roomId = roomId;
+    }
     // 编辑发送包
-    encode: (msg) => {
+    encode(msg) {
         let data = Buffer.alloc(msg.length + 13);
         data.writeInt32LE(msg.length + 9, 0);
         data.writeInt32LE(msg.length + 9, 4);
         data.writeInt32LE(689, 8);
         data.write(msg + '\0', 12);
         return data;
-    },
+    }
     // 小端整数转十进制进制
-    littleIntToInt: (byteStr) => {
+    littleIntToInt(byteStr) {
         let s = '';
         for (let str of byteStr) {
-            s += msgEditor.completeHex(str.toString(16));
+            s += this.completeHex(str.toString(16));
         }
         return parseInt(s, 16);
-    },
+    }
     // 补 0
-    completeHex: (bit) => {
+    completeHex(bit) {
         if (bit.length == 1) {
             return '0' + bit;
-        }
-        else if (bit.length == 2) {
+        } else if (bit.length == 2) {
             return bit;
         }
-    },
+    }
     // 解析收到的字节包
-    decode: (bytes, callback) => {
+    decode(bytes, callback) {
         /**
          * 一个数据包可能有多条信息
          * 前 4 个字节为当前条数据的长度
@@ -59,7 +57,7 @@ let msgEditor = {
         let lenStr;
         while (decodedMsgLen < totalLength) {
             lenStr = bytes.slice(decodedMsgLen, decodedMsgLen + 4);
-            len = msgEditor.littleIntToInt(lenStr.reverse()) + 4;
+            len = this.littleIntToInt(lenStr.reverse()) + 4;
             singleMsgBuffer = bytes.slice(decodedMsgLen, decodedMsgLen + len);
             decodedMsgLen += len;
             // 去除头部和尾部的 '\0'
@@ -70,8 +68,7 @@ let msgEditor = {
                 let arr = item.split('@=');
                 try {
                     decodedMsg[arr[0].replace(/@S/g, '\/').replace(/@A/g, '@')] = arr[1].replace(/@S/g, '').replace(/@A/g, '');
-                }
-                catch (e) {
+                } catch (e) {
                     console.log(arr[0]);
                     console.log(arr[1]);
                 }
@@ -79,28 +76,42 @@ let msgEditor = {
             callback(decodedMsg);
         }
     }
-};
+    // 发送初始化包, 维护连接
+    init(ws) {
+        // 登录信息
+        let login_msg = `type@=loginreq/room_id@=${this.roomId}/dfl@=sn@A=105@Sss@A=1/username@=${USERNAME}/uid@=${UID}/ver@=20190610/aver@=218101901/ct@=0/`;
+        ws.send(this.encode(login_msg));
+        // 入组信息
+        let join_group_msg = `type@=joingroup/rid@=${this.roomId}/gid@=1/`;
+        ws.send(this.encode(join_group_msg));
+        // 心跳
+        let heartbeat_msg = 'type@=mrkl/';
+        ws.send(this.encode(heartbeat_msg));
+        // 维持心跳
+        setInterval(() => {
+            ws.send(this.encode(heartbeat_msg));
+        }, 45 * 1000);
+    }
+    start(callback) {
+        // 建立连接
+        let ws = new WebSocket(BARRAGE_SERVER, {
+            origin: ORIGIN
+        });
+        // 初始化并维护连接
+        ws.on('open', () => {
+            console.log(`已连接到 ${this.roomId} 房间......`);
+            this.init(ws);
+        });
+        // 处理收到的消息
+        ws.on('message', (data) => {
+            this.decode(data, (msg) => {
+                callback(msg);
+            });
+        });
+        ws.on('close', () => {
+            console.log('disconnected');
+        });
+    }
+}
 
-ws.on('open', () => {
-    console.log(`已连接到 ${ROOM_ID} 房间......`);
-    let login_msg = `type@=loginreq/room_id@=${ROOM_ID}/dfl@=sn@A=105@Sss@A=1/username@=${USERNAME}/uid@=${UID}/ver@=20190610/aver@=218101901/ct@=0/`;
-    ws.send(msgEditor.encode(login_msg));
-    let join_group_msg = `type@=joingroup/rid@=${ROOM_ID}/gid@=1/`;
-    ws.send(msgEditor.encode(join_group_msg));
-    let heartbeat_msg = 'type@=mrkl/';
-    ws.send(msgEditor.encode(heartbeat_msg));
-    setInterval(() => {
-        ws.send(msgEditor.encode(heartbeat_msg));
-    }, 45 * 1000);
-});
-
-ws.on('message', (data) => {
-    msgEditor.decode(data, (msg) => {
-        console.log(msg);
-    });
-});
-
-
-ws.on('close', () => {
-    console.log('disconnected');
-});
+module.exports = Barrage;
