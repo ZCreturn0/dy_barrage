@@ -1,0 +1,25 @@
+{
+    "name": "dy-barrage",
+    "version": "1.0.3",
+    "description": "connect douyu barrage,get raw barrage bytes,decodes to json",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [
+        "douyu",
+        "barrage",
+        "斗鱼",
+        "弹幕",
+        "websocket"
+    ],
+    "author": "zcreturn0",
+    "license": "ISC",
+    "devDependencies": {
+        "ws": "^7.2.1"
+    },
+    "dependencies": {
+        "ws": "^7.2.1"
+    },
+    "homepage": "https://github.com/ZCreturn0/dy_barrage"
+}
