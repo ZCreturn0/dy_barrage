@@ -27,3 +27,8 @@ server.start((msg) => {
 房间号不一定是房间URL最后的一串数字,要查看真实房间号,进入房间后F12打开调试工具,然后F5刷新页面,第一个请求后的数字才是房间号.
 
 ![房间号](https://raw.githubusercontent.com/ZCreturn0/dy_barrage/master/roomId.png)
+
+
+------------------------------------
+2020-09-16 更新:
+新增排行榜数据的解析,返回type为'ranklist','frank','fswrank'即为排行榜数据
