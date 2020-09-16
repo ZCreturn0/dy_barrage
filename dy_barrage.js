@@ -36,6 +36,58 @@ class Barrage {
             return bit;
         }
     }
+    // 解析用户字符串
+    decodeUserStr(str) {
+        /**
+         * 用户属性分隔符
+         * 由于用户名和头像字段中可能含有 'S' 字符,所以不能直接 split
+         * 目前暂时使用从后往前遍历字符串, 判断两个S之间是否含有 'A=', 有的话 split, 没的话继续往前遍历, 不 split
+         */
+        // console.log(str);
+        const userAttrSplit = 'S';
+        // key,value分隔符
+        const keyValueSplit = 'A=';
+        const reverseKeyValueSplit = '=A';
+        let keyValueStrList = [];
+        // 把字符串转成数组并翻转
+        let reverseStrArr = str.split('').reverse();
+        // 当前所在的下标
+        let start = 0;
+        let end = 0;
+        // 处理刚开始的 'S'
+        let status = 'end';
+        while (end < reverseStrArr.length) {
+            if (reverseStrArr[end] === userAttrSplit) {
+                if (status === 'end') {
+                    // 切换状态
+                    status = 'start';
+                } else if (status === 'start') {
+                    // 取 start, end 之间的字符串
+                    // 两端的 'S' 不需要取
+                    let keyValueStr = reverseStrArr.slice(start + 1, end).join('');
+                    // 含有 keyValueSplit 为合法的键值对字符串
+                    if (keyValueStr.indexOf(reverseKeyValueSplit) >= 0) {
+                        // 翻转,保存正确的顺序格式
+                        keyValueStrList.push(keyValueStr.split('').reverse().join(''));
+                        // 开始计数
+                        start = end;
+                    }
+                }
+            }
+            end++;
+        }
+        // 最后还要加入一条
+        let keyValueStr = reverseStrArr.slice(start + 1, end).join('');
+        keyValueStrList.push(keyValueStr.split('').reverse().join(''));
+        // 现在属性是逆序排的,翻转属性顺序
+        keyValueStrList = keyValueStrList.reverse();
+        let userInfo = {};
+        for (let keyValueStr of keyValueStrList) {
+            let keyValue = keyValueStr.split(keyValueSplit);
+            userInfo[keyValue[0]] = keyValue[1];
+        }
+        return userInfo;
+    }
     // 解析收到的字节包
     decode(bytes, callback) {
         /**
@@ -71,6 +123,66 @@ class Barrage {
                 } catch (e) {
                     console.log(arr[0]);
                     console.log(arr[1]);
+                }
+            }
+            // 解析排行榜数据
+            // ranklist 中的 list 为周榜, frank, fswrank 暂时未知
+            if (decodedMsg.type === 'ranklist' || decodedMsg.type === 'frank' || decodedMsg.type === 'fswrank') {
+                let weekStr = decodedMsg.list;
+                if (!weekStr) {
+                    decodedMsg.list = [];
+                } else {
+                    let userList = [];
+                    // 用户分隔符
+                    const userSplit = 'SnewrgA=0S';
+                    // 分割用户
+                    let userStrList = weekStr.split(userSplit);
+                    // 删除最后一个空用户
+                    userStrList.splice(-1);
+                    // 对每个用户做处理
+                    for (let userStr of userStrList) {
+                        userList.push(this.decodeUserStr(userStr));
+                    }
+                    decodedMsg.list = userList;
+                }
+            }
+            // ranklist包含3个榜单: list: 周榜  list_all: 总榜  list_day: 日榜
+            if (decodedMsg.type === 'ranklist') {
+                // 总榜
+                let list_all = decodedMsg.list_all;
+                // 日榜
+                let list_day = decodedMsg.list_day;
+                // 用户分隔符
+                const userSplit = 'SnewrgA=0S';
+                if (!list_all) {
+                    decodedMsg.list_all = [];
+                } else {
+                    let userList = [];
+                    // 分割用户
+                    let userStrList = list_all.split(userSplit);
+                    // 删除最后一个空用户
+                    userStrList.splice(-1);
+                    // 对每个用户做处理
+                    for (let userStr of userStrList) {
+                        userList.push(this.decodeUserStr(userStr));
+                    }
+                    decodedMsg.list_all = userList;
+                }
+                if (!list_day) {
+                    decodedMsg.list_day = [];
+                } else {
+                    let userList = [];
+                    // 用户分隔符
+                    const userSplit = 'SnewrgA=0S';
+                    // 分割用户
+                    let userStrList = list_day.split(userSplit);
+                    // 删除最后一个空用户
+                    userStrList.splice(-1);
+                    // 对每个用户做处理
+                    for (let userStr of userStrList) {
+                        userList.push(this.decodeUserStr(userStr));
+                    }
+                    decodedMsg.list_day = userList;
                 }
             }
             callback(decodedMsg);
