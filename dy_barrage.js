@@ -36,14 +36,13 @@ class Barrage {
             return bit;
         }
     }
-    // 解析用户字符串
+    // 解析用户排行字符串
     decodeUserStr(str) {
         /**
          * 用户属性分隔符
          * 由于用户名和头像字段中可能含有 'S' 字符,所以不能直接 split
          * 目前暂时使用从后往前遍历字符串, 判断两个S之间是否含有 'A=', 有的话 split, 没的话继续往前遍历, 不 split
          */
-        // console.log(str);
         const userAttrSplit = 'S';
         // key,value分隔符
         const keyValueSplit = 'A=';
