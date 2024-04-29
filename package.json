@@ -1,6 +1,6 @@
 {
     "name": "dy-barrage",
-    "version": "1.0.12",
+    "version": "1.0.13",
     "description": "connect douyu barrage,get raw barrage bytes,decodes to json",
     "main": "dy_barrage.js",
     "scripts": {
